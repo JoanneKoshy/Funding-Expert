@@ -10,13 +10,13 @@ def check_eligibility(
     language: str
 ) -> str:
     """
-    Eligibility reasoning in ONE Gemini call (rate-limit safe)
+    Eligibility reasoning with intelligent fallback
     """
 
     prompt = f"""
     You are an AI startup funding advisor.
 
-    Language to respond in: {language}
+    Respond in this language: {language}
 
     STARTUP PROFILE:
     - Startup age: {startup_age} years
@@ -28,11 +28,25 @@ def check_eligibility(
     {question}
 
     TASK:
-    1. Determine funding eligibility.
-    2. Explain eligibility or ineligibility clearly.
-    3. Suggest alternative schemes or next steps.
+    1. Assess funding eligibility based on known Indian startup funding practices.
+    2. If exact policy rules are available, apply them.
+    3. If policy details are partial or unavailable, use informed reasoning
+       based on common eligibility patterns (startup age, sector, stage, geography).
+    4. Clearly explain your reasoning.
+    5. Suggest next steps or alternative funding options.
+    6. keep the response concise and optimzed rather than overly lengthy.
+    7. could include tables if any, for a better representation of the data.
 
-    Be practical, founder-friendly, and concise.
+    IMPORTANT:
+    - Do NOT refuse to answer.
+    - Avoid saying "I don't have enough information".
+    - Be transparent when using general insights.
+    - Be practical and founder-friendly.
+
+    Output format:
+    - Eligibility Assessment
+    - Reasoning
+    - Recommendations
     """
 
     return ask_gemini(prompt)
