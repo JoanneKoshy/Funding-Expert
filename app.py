@@ -17,16 +17,25 @@ st.set_page_config(
     layout="wide"
 )
 
-# ---------------- TITLE ----------------
+# ---------------- SIDEBAR : LANGUAGE ----------------
+st.sidebar.header("🌐 Language")
+language = st.sidebar.selectbox(
+    "Select language",
+    ("English", "Malayalam", "Hindi")
+)
 
-st.title(" Multilingual Funding Intelligence System")
-st.caption("AI-powered funding, investor & policy intelligence for founders")
+# 🔥 UI TEXT MAP
+T = UI_TEXT[language]
+
+# ---------------- TITLE ----------------
+st.title(T["title"])
+st.caption(T["caption"])
 
 # ---------------- SIDEBAR ----------------
-st.sidebar.header("🧠 Features")
+st.sidebar.header(T["features"])
 
 feature = st.sidebar.radio(
-    "Choose a feature",
+    T["choose_feature"],
     (
         "Eligibility Check",
         "Regional Funding",
@@ -34,19 +43,31 @@ feature = st.sidebar.radio(
         "Policy Simplifier",
         "Investor Interest",
         "Common Rejection Reasons"
-    )
+    ),
+    format_func=lambda x: {
+        "Eligibility Check": T["eligibility"],
+        "Regional Funding": T["regional"],
+        "Funding Trends": T["trends"],
+        "Policy Simplifier": T["policy"],
+        "Investor Interest": T["investor"],
+        "Common Rejection Reasons": T["rejection"]
+    }[x]
 )
 
 st.sidebar.markdown("---")
 
-st.sidebar.header("🌐 Language")
-language = st.sidebar.selectbox(
-    "Select language",
-    ("English", "Malayalam", "Hindi")
-)
+# ---------------- MAIN AREA (🔥 FIXED FEATURE TITLE) ----------------
+feature_label = {
+    "Eligibility Check": T["eligibility"],
+    "Regional Funding": T["regional"],
+    "Funding Trends": T["trends"],
+    "Policy Simplifier": T["policy"],
+    "Investor Interest": T["investor"],
+    "Common Rejection Reasons": T["rejection"]
+}[feature]
 
-# ---------------- MAIN AREA ----------------
-st.subheader(f"🔍 {feature}")
+st.subheader(f"🔍 {feature_label}")
+
 
 # ---------------- FEATURE INPUTS ----------------
 
@@ -54,58 +75,67 @@ st.subheader(f"🔍 {feature}")
 if feature == "Eligibility Check":
     col1, col2 = st.columns(2)
     with col1:
-        startup_age = st.number_input("Startup age (years)", min_value=0.0, step=0.1)
-        sector = st.text_input("Sector (e.g., Agritech, Fintech)")
+        startup_age = st.number_input(
+            T["startup_age"],
+            min_value=0.0,
+            step=0.1
+        )
+        sector = st.text_input(T["sector"])
     with col2:
         revenue_stage = st.selectbox(
-            "Revenue stage",
-            ("Pre-revenue", "Early revenue", "Growing revenue")
+            T["revenue_stage"],
+            ("pre_revenue", "early_revenue", "growing_revenue"),
+            format_func=lambda x: T[x]
         )
-        state = st.text_input("State")
+        state = st.text_input(T["state"])
 
 # 🔹 Regional Funding
 elif feature == "Regional Funding":
-    state = st.text_input("Enter your state")
+    state = st.text_input(T["state"])
 
 # 🔹 Investor Inputs
 elif feature in ["Investor Interest", "Common Rejection Reasons"]:
     col1, col2 = st.columns(2)
     with col1:
-        sector = st.text_input("Sector")
-        state = st.text_input("State")
+        sector = st.text_input(T["sector"])
+        state = st.text_input(T["state"])
     with col2:
         revenue_stage = st.selectbox(
-            "Revenue stage",
-            ("Pre-revenue", "Early revenue", "Growing revenue")
+            T["revenue_stage"],
+            ("pre_revenue", "early_revenue", "growing_revenue"),
+            format_func=lambda x: T[x]
         )
 
 # 🔹 Policy Simplifier
 elif feature == "Policy Simplifier":
-    uploaded_file = st.file_uploader("Upload policy document (PDF)", type=["pdf"])
+    uploaded_file = st.file_uploader(
+        T["upload_policy"],
+        type=["pdf"]
+    )
 
 # ---------------- QUESTION BOX ----------------
 if feature not in ["Investor Interest", "Common Rejection Reasons"]:
-    question = st.text_area("Ask your question")
+    question = st.text_area(T["ask_question"])
 else:
     question = ""
 
-submit = st.button("Submit")
+submit = st.button(T["submit"])
 
 # ================= SUBMIT HANDLER =================
 if submit:
-    st.markdown("### Expert is thinking...")
+    st.markdown(f"### {T['thinking']}")
 
-    # 🔥 POLICY SIMPLIFIER (PER-UPLOAD RAG)
+    # 🔥 POLICY SIMPLIFIER
     if feature == "Policy Simplifier":
         if not uploaded_file:
-            st.warning("Please upload a policy PDF.")
+            st.warning(T["upload_policy"])
             st.stop()
 
         answer = simplify_policy(uploaded_file, question)
         st.write(answer)
         st.stop()
 
-    # 🔥 ELIGIBILITY CHECK (PURE REASONING)
+    # 🔥 ELIGIBILITY CHECK
     if feature == "Eligibility Check":
         answer = check_eligibility(
             question=question,
@@ -140,7 +170,7 @@ if submit:
         st.write(answer)
         st.stop()
 
-    # 🔥 FUNDING TRENDS (HYBRID RAG + LLM)
+    # 🔥 FUNDING TRENDS
     if feature == "Funding Trends":
         normalized_question = translate_to_english(question, language)
         answer = get_funding_trends(normalized_question)
@@ -148,7 +178,7 @@ if submit:
         st.write(final_answer)
         st.stop()
 
-    # 🔹 REGIONAL FUNDING (STATE-AWARE RAG + FALLBACK)
+    # 🔹 REGIONAL FUNDING
     normalized_question = translate_to_english(question, language)
 
     if feature == "Regional Funding":
